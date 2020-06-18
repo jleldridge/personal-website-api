@@ -7,10 +7,7 @@ function jwt() {
     path: [
       // public routes that don't require authentication
       "/admin/login",
-      {
-        url: "/content/home",
-        methods: ["GET"],
-      },
+      /\/content\/[^\s]*/,
     ],
   });
 }

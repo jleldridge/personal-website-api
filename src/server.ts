@@ -4,7 +4,7 @@ import cors from "cors";
 import jwt from "./jwt";
 import errorHandler from "./error";
 import admin from "./admin";
-import home from "./content/home";
+import content from "./content";
 
 const app = express();
 
@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(jwt());
 app.use("/admin", admin);
-app.use("/content/home", home);
+app.use("/content", content);
 app.use(errorHandler);
 
 console.log("server started!");
