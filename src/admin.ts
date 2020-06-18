@@ -46,8 +46,10 @@ function update(req: express.Request, res: express.Response) {
       if (entry.match(".git")) return;
 
       console.log("reading entry", entry);
-      const key = entry.split(".")[0].toLowerCase();
-      content[key] = fs.readFileSync(`./tmp/${entry}`).toString();
+      if (fs.statSync(`./tmp/${entry}`).isFile()) {
+        const key = entry.split(".")[0].toLowerCase();
+        content[key] = fs.readFileSync(`./tmp/${entry}`).toString();
+      }
     });
 
     Object.keys(content).forEach((k: string) => {
