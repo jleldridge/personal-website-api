@@ -33,6 +33,7 @@ function login(
 
 function update(req: express.Request, res: express.Response) {
   console.log("received update request");
+  rimraf.sync("./tmp");
   Git.Clone.clone(
     "https://github.com/jleldridge/personal-website-content.git",
     "./tmp"
@@ -40,11 +41,14 @@ function update(req: express.Request, res: express.Response) {
     console.log("successfully cloned repo!");
 
     let content: { [name: string]: string } = {};
-    content["home"] = fs.readFileSync("./tmp/home.md").toString();
-    content["skills"] = fs.readFileSync("./tmp/skills.md").toString();
-    content["experience"] = fs.readFileSync("./tmp/experience.md").toString();
-    content["education"] = fs.readFileSync("./tmp/education.md").toString();
-    content["projects"] = fs.readFileSync("./tmp/projects.md").toString();
+    const repoDir = fs.readdirSync("./tmp");
+    repoDir.forEach((entry) => {
+      if (entry.match(".git")) return;
+
+      console.log("reading entry", entry);
+      const key = entry.split(".")[0].toLowerCase();
+      content[key] = fs.readFileSync(`./tmp/${entry}`).toString();
+    });
 
     Object.keys(content).forEach((k: string) => {
       redisClient.set(`content:${k}`, content[k], (err, reply) => {
