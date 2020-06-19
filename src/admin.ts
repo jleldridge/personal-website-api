@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import fs from "fs";
 import rimraf from "rimraf";
 import Git from "nodegit";
+import { promisify } from "util";
 import redisClient from "./redisClient";
 import config from "./config.json";
 
@@ -31,13 +32,13 @@ function login(
   });
 }
 
-function update(req: express.Request, res: express.Response) {
+async function update(req: express.Request, res: express.Response) {
   console.log("received update request");
   rimraf.sync("./tmp");
   Git.Clone.clone(
     "https://github.com/jleldridge/personal-website-content.git",
     "./tmp"
-  ).then(() => {
+  ).then(async () => {
     console.log("successfully cloned repo!");
 
     let content: { [name: string]: string } = {};
@@ -52,16 +53,20 @@ function update(req: express.Request, res: express.Response) {
       }
     });
 
-    Object.keys(content).forEach((k: string) => {
-      redisClient.set(`content:${k}`, content[k], (err, reply) => {
-        if (err) {
-          console.log(err);
-          return;
-        }
-        console.log(`Successfully updated ${k} content.`);
-      });
-    });
+    const setAsync = promisify(redisClient.set).bind(redisClient);
 
+    const keys = Object.keys(content);
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      await setAsync(`content:${k}`, content[k])
+        .then(() => {
+          console.log(`Successfully updated ${k} content.`);
+        })
+        .catch((err) => console.error(err));
+    }
+
+    console.log("Update complete!");
+    res.send("Update complete!");
     rimraf.sync("./tmp");
   });
 }
